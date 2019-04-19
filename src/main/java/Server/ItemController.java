@@ -1,16 +1,10 @@
+package Server;
+
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.*;
-import org.springframework.security.crypto.bcrypt.BCrypt;
-
 import javax.servlet.http.*;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
 import java.sql.*;
-
 import org.json.JSONObject;
-import org.json.JSONArray;
 
 @RestController
 public class ItemController {
@@ -19,7 +13,7 @@ public class ItemController {
         JSONObject payloadObj = new JSONObject(payload);
         Connection conn = createConnection();
 
-        int userID = payloadObj.getInt("user_id");
+        String userID = payloadObj.getString("user_id");
         int itemID = payloadObj.getInt("item_id");
         String name = payloadObj.getString("item_name");
         String description = payloadObj.getString("item_desc");
@@ -35,7 +29,7 @@ public class ItemController {
         PreparedStatement ps;
         try {
             ps = conn.prepareStatement(insertTableSQL);
-            ps.setInt(1, userID);
+            ps.setString(1, userID);
             ps.setString(2, name);
             ps.setString(3, description);
             ps.setString(4, type);
@@ -43,7 +37,9 @@ public class ItemController {
             ps.setString(6, location);
             ps.setTimestamp(7, timestamp);
             ps.executeUpdate();
+
         } catch(SQLException e) {
+
             e.printStackTrace();
         } finally {
             try { if(conn != null) conn.close(); }
@@ -54,6 +50,8 @@ public class ItemController {
 		/*Creating http headers object to place into response entity the server will return.
 		This is what allows us to set the content-type to application/json or any other content-type
 		we would want to return */
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.set("Content-Type", "application/json");
 
 
         //Returns the response with a String, headers, and HTTP status
@@ -62,7 +60,8 @@ public class ItemController {
         responseObj.put("item_id ", itemID);
         responseObj.put("item_name ", name);
         responseObj.put("message", "item added successfully");
-        return new ResponseEntity(responseObj.toString(), responseHeaders, HttpStatus.OK);
+        return new ResponseEntity<>(responseObj.toString(), responseHeaders, HttpStatus.OK);
+        // return new ResponseEntity(responseObj.toString(), responseHeaders, HttpStatus.OK);
     }
     /*
     @RequestMapping(value = "/queryItems", method = RequestMethod.GET) // <-- setup the endpoint URL at /hello with the HTTP POST method
@@ -149,12 +148,10 @@ public class ItemController {
         return builder.toString();
     }
 
-    private static Connection createConnection() {
+    private Connection createConnection() {
         String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
-        String TIMEZONE_THING = "?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=" +
-                "false&serverTimezone=UTC";
-        String UNICODE = "?useUnicode=true&characterEncoding=UTF-8";
-        String DB_URL = "jdbc:mysql://localhost/flost" + UNICODE + TIMEZONE_THING;
+        String TIMEZONE_THING = "?useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=PST";
+        String DB_URL = "jdbc:mysql://localhost/flost" +  TIMEZONE_THING;
         String USER = "root";
         String PASSWORD = "password123";
         Connection conn;
