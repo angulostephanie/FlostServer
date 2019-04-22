@@ -8,23 +8,23 @@ import org.json.JSONObject;
 
 @RestController
 public class UserController {
-    @RequestMapping(value = "/createUser", method = RequestMethod.POST)
-    public ResponseEntity<String> createUser(@RequestBody String payload, HttpServletRequest request) {
-        JSONObject payloadObj = new JSONObject(payload);
-
-
+    /*
+        Checks if user not in Users table,
+        if user is in table, login successfully,
+        if not, insert user into Users table.
+     */
+    @RequestMapping(value = "/loginUser", method = RequestMethod.POST)
+    public ResponseEntity<String> loginUser(@RequestBody String payload, HttpServletRequest request) {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.set("Content-Type", "application/json");
 
+        JSONObject payloadObj = new JSONObject(payload);
         Connection conn = createConnection();
 
         String userID = payloadObj.getString("user_id");
-
         JSONObject existingUser = doesUserExist(conn, userID);
 
-        if(existingUser != null) {
-            return new ResponseEntity<>(existingUser.toString(), responseHeaders, HttpStatus.OK);
-        }
+        if(existingUser != null) { return new ResponseEntity<>(existingUser.toString(), responseHeaders, HttpStatus.OK); }
 
         JSONObject responseObj = new JSONObject();
         String firstName = payloadObj.getString("first_name");
@@ -56,11 +56,7 @@ public class UserController {
             }
         }
 
-
-
         responseObj.put("user_id ", userID);
-        responseObj.put("first_name ", firstName);
-        responseObj.put("email ", email);
         responseObj.put("message", "user created successfully");
         return new ResponseEntity<>(responseObj.toString(), responseHeaders, HttpStatus.OK);
     }
@@ -74,13 +70,9 @@ public class UserController {
             ps.setString(1, userID);
             ResultSet results = ps.executeQuery();
             if(results.next()) {
-                String first = results.getString("first_name");
-                String email = results.getString("email");
-                System.out.println("HELLO THERE");
                 userObj = new JSONObject();
+                userObj.put("user_id",  userID);
                 userObj.put("message", "user already exist, welcome back!");
-                userObj.put("first_name", first);
-                userObj.put("email", email);
             }
 
         } catch (SQLException e) {

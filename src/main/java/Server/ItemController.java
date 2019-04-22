@@ -1,5 +1,6 @@
 package Server;
 
+import org.json.JSONArray;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.*;
 import javax.servlet.http.*;
@@ -8,144 +9,107 @@ import org.json.JSONObject;
 
 @RestController
 public class ItemController {
-    @RequestMapping(value = "/createItem", method = RequestMethod.POST) // <-- setup the endpoint URL at /hello with the HTTP POST method
-    public ResponseEntity<String> createItem(@RequestBody String payload, HttpServletRequest request) {
+    /*
+        Posts item into Items table
+     */
+    @RequestMapping(value = "/postItem", method = RequestMethod.POST)
+    public ResponseEntity<String> postItem(@RequestBody String payload, HttpServletRequest request) {
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.set("Content-Type", "application/json");
         JSONObject payloadObj = new JSONObject(payload);
+        JSONObject responseObj = new JSONObject();
         Connection conn = createConnection();
 
-        String userID = payloadObj.getString("user_id");
         int itemID = payloadObj.getInt("item_id");
-        String name = payloadObj.getString("item_name");
+        String userID = payloadObj.getString("user_id");
+        String title = payloadObj.getString("item_name");
         String description = payloadObj.getString("item_desc");
-        String type = payloadObj.getString("item_type");
-        String reward = payloadObj.getString("item_reward");
+        String type = payloadObj.getString("item_type"); // lost or found
         String location = payloadObj.getString("item_location");
-        Date now = new Date(System.currentTimeMillis());
-        Timestamp timestamp = new Timestamp(now.getTime());
+        double reward = payloadObj.getDouble("item_reward");
 
         String insertTableSQL = "Insert INTO Items"  +
-                "(user_id, item_name, item_desc, item_type, item_reward, item_location, timestamp)" +
-                "values (?,?,?,?,?,?,?)";
+                "(item_id, user_id, item_name, item_desc, item_type, item_reward, item_location, item_timestamp)" +
+                "values (?,?,?,?,?,?,?,?)";
         PreparedStatement ps;
         try {
             ps = conn.prepareStatement(insertTableSQL);
-            ps.setString(1, userID);
-            ps.setString(2, name);
-            ps.setString(3, description);
-            ps.setString(4, type);
-            ps.setString(5, reward);
-            ps.setString(6, location);
-            ps.setTimestamp(7, timestamp);
+            ps.setInt(1, itemID);
+            ps.setString(2, userID);
+            ps.setString(3, title);
+            ps.setString(4, description);
+            ps.setString(5, type);
+            ps.setDouble(6, reward);
+            ps.setString(7, location);
+            ps.setTimestamp(8, new Timestamp(System.currentTimeMillis()));
             ps.executeUpdate();
 
         } catch(SQLException e) {
-
             e.printStackTrace();
+            responseObj.put("error", e.getErrorCode());
+            responseObj.put("message", "could not post item to db :/ [" + e.getMessage() + "]");
+            return new ResponseEntity<>(responseObj.toString(), responseHeaders, HttpStatus.BAD_REQUEST);
         } finally {
             try { if(conn != null) conn.close(); }
             catch(SQLException e) { e.printStackTrace(); }
         }
 
-
-		/*Creating http headers object to place into response entity the server will return.
-		This is what allows us to set the content-type to application/json or any other content-type
-		we would want to return */
-        HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.set("Content-Type", "application/json");
-
-
-        //Returns the response with a String, headers, and HTTP status
-        JSONObject responseObj = new JSONObject();
-        responseObj.put("user_id ", userID);
-        responseObj.put("item_id ", itemID);
-        responseObj.put("item_name ", name);
-        responseObj.put("message", "item added successfully");
+        responseObj.put("item_id", itemID);
+        responseObj.put("user_id", userID);
+        responseObj.put("message", "item posted to db successfully");
         return new ResponseEntity<>(responseObj.toString(), responseHeaders, HttpStatus.OK);
-        // return new ResponseEntity(responseObj.toString(), responseHeaders, HttpStatus.OK);
     }
+
     /*
-    @RequestMapping(value = "/queryItems", method = RequestMethod.GET) // <-- setup the endpoint URL at /hello with the HTTP POST method
-    public ResponseEntity<String> listLostItems(HttpServletRequest request) {
-//		Creating http headers object to place into response entity the server will return.
-//		This is what allows us to set the content-type to application/json or any other content-type
-//		we would want to return
+       Gets items based on whether its type 'lost' or 'found'
+       If no parameter is passed, return all.
+       This is needed for the list/map views.
+     */
+    @RequestMapping(value = "/getItems", method = RequestMethod.GET)
+    public ResponseEntity<String> getAllItems(@RequestBody(required = false) String payload, HttpServletRequest request) {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.set("Content-Type", "application/json");
+        boolean all = payload == null;
 
-        JSONArray itemsArray = new JSONArray();
+        JSONArray items = new JSONArray();
+
+        String query = all ? "SELECT * From Items ORDER BY `item_timestamp` ASC" :
+                "SELECT * FROM Items WHERE item_type = ? ORDER BY `item_timestamp` ASC";
+
+        Connection conn = createConnection();
+        PreparedStatement ps;
         try {
-            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/classdb?useUnicode=true&characterEncoding=UTF-8", "root", "password");
-            String query = "SELECT userid, item_name, item_type FROM flost.lostItems";
-            PreparedStatement stmt = null;
-            stmt = conn.prepareStatement(query);
-            ResultSet rs = stmt.executeQuery();
+            ps = conn.prepareStatement(query);
 
-            while (rs.next()) {
-                String itemName = rs.getString("item_name");
-                int itemType = rs.getString("item_type");
-
-                JSONObject obj = new JSONObject();
-                obj.put("item_name", name);
-                obj.put("item_type", itemType);
-                itemsArray.put(obj);
+            if(!all) {
+                JSONObject payloadObj = new JSONObject(payload);
+                String type = payloadObj.getString("item_type");
+                ps.setString(1, type);
             }
-        } catch (SQLException e ) {
+            ResultSet results = ps.executeQuery();
+
+            while(results.next()) {
+                JSONObject item = new JSONObject();
+                item.put("item_id", results.getInt("item_id"));
+                item.put("user_id", results.getString("user_id"));
+                item.put("item_name", results.getString("item_name"));
+                item.put("item_desc", results.getString("item_desc"));
+                item.put("item_type", results.getString("item_type"));
+                item.put("item_location", results.getString("item_location"));
+                item.put("item_reward", results.getDouble("item_reward"));
+                item.put("item_timestamp", results.getTimestamp("item_timestamp"));
+                items.put(item);
+            }
+            ps.close();
+        } catch(SQLException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (conn != null) { conn.close(); }
-            }catch(SQLException se) {
+            JSONObject errorObj = new JSONObject();
+            errorObj.put("message", "could not query items");
 
-            }
+            return new ResponseEntity(errorObj.toString(), responseHeaders, HttpStatus.BAD_REQUEST);
 
         }
-        return new ResponseEntity(itemsArray.toString(), responseHeaders, HttpStatus.OK);
-    }
-    */
-
-    /*
-    @RequestMapping(value = "/searchItems", method = RequestMethod.GET) // <-- setup the endpoint URL at /hello with the HTTP POST method
-    public ResponseEntity<String> searchLostItems(HttpServletRequest request) {
-        String itemType = request.getParameter("itemType");
-        HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.set("Content-Type", "application/json");
-        Connection conn = null;
-        JSONArray itemsArray = new JSONArray();
-        try {
-            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/classdb?useUnicode=true&characterEncoding=UTF-8", "root", "password");
-            String query = "SELECT userid, item_name, item_type FROM flost.lostItems WHERE item_type=?";
-            PreparedStatement stmt = null;
-            stmt = conn.prepareStatement(query);
-            stmt.setString(1, itemType);
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                String itemName = rs.getString("item_name");
-                int itemType = rs.getString("item_type");
-
-                JSONObject obj = new JSONObject();
-                obj.put("item_name", name);
-                obj.put("item_type", itemType);
-                itemsArray.put(obj);
-            }
-        } catch (SQLException e ) {
-        } finally {
-            try {
-                if (conn != null) { conn.close(); }
-            }catch(SQLException se) {
-
-            }
-
-        }
-        return new ResponseEntity(itemsArray.toString(), responseHeaders, HttpStatus.OK);
-    }
-    */
-    public static String bytesToHex(byte[] in) {
-        StringBuilder builder = new StringBuilder();
-        for(byte b: in) {
-            builder.append(String.format("%02x", b));
-        }
-        return builder.toString();
+        return new ResponseEntity(items.toString(), responseHeaders, HttpStatus.OK);
     }
 
     private Connection createConnection() {
