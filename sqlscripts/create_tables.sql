@@ -1,22 +1,23 @@
 
 create table Users (
-	user_id varchar(40) not null,
-	first_name varchar(30) not null,
 	email varchar(30) not null,
-	primary key(user_id) 
+	first_name varchar(30) not null,
+	last_name varchar(30) not null,
+	photo_url text,
+	primary key(email)
 );
 
 create table Items (
 	item_id int not null,
-	user_id varchar(40) not null,
+	email varchar(40) not null,
 	item_name varchar(30) not null,
 	item_desc varchar(60) not null,
 	item_type enum('lost', 'found') not null,
 	item_location enum('fowler', 'johnson', 'academic commons', 'berkus') not null,
 	item_reward decimal(10, 2) not null,
 	item_timestamp timestamp,
-	primary key (item_id, user_id), 
-	foreign key (user_id) references Users(user_id)  
+	primary key (item_id, email),
+	foreign key (email) references Users(email)
 );
 
 -- dependent on Items

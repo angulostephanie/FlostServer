@@ -16,6 +16,7 @@ public class ItemController {
     public ResponseEntity<String> postItem(@RequestBody String payload, HttpServletRequest request) {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.set("Content-Type", "application/json");
+
         JSONObject payloadObj = new JSONObject(payload);
         JSONObject responseObj = new JSONObject();
         Connection conn = createConnection();
@@ -66,13 +67,14 @@ public class ItemController {
        This is needed for the list/map views.
      */
     @RequestMapping(value = "/getItems", method = RequestMethod.GET)
-    public ResponseEntity<String> getAllItems(@RequestBody(required = false) String payload, HttpServletRequest request) {
+    public ResponseEntity<String> getItems(@RequestBody(required = false) String payload, HttpServletRequest request) {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.set("Content-Type", "application/json");
-        boolean all = payload == null;
+        boolean all = false;
 
         JSONArray items = new JSONArray();
-
+        JSONObject payloadObj = new JSONObject(payload);
+        if(payloadObj.isNull("item_type")) all = true;
         String query = all ? "SELECT * From Items ORDER BY `item_timestamp` ASC" :
                 "SELECT * FROM Items WHERE item_type = ? ORDER BY `item_timestamp` ASC";
 
@@ -82,7 +84,6 @@ public class ItemController {
             ps = conn.prepareStatement(query);
 
             if(!all) {
-                JSONObject payloadObj = new JSONObject(payload);
                 String type = payloadObj.getString("item_type");
                 ps.setString(1, type);
             }
