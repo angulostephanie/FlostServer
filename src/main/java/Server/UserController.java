@@ -81,7 +81,7 @@ public class UserController {
             responseObj.put("first_name", firstName);
             responseObj.put("last_name", lastName);
             responseObj.put("email", email);
-            if(photoURL != null) responseObj.put("photo_url", photoURL);
+            if(!photoURL.isEmpty()) responseObj.put("photo_url", photoURL);
 
             String insertTableSQL = "Insert INTO Users" +
                     "(email, first_name, last_name, photo_url)" +
@@ -131,16 +131,13 @@ public class UserController {
             if(results.next()) {
                 userObj = new JSONObject();
                 System.out.println("-------------");
-                System.out.println("doesUserExist()");
-                System.out.println(results.toString());
-                System.out.println("-------------");
+                System.out.println("UserController::doesUserExist()");
                 userObj.put("first_name", results.getString("first_name"));
                 userObj.put("last_name", results.getString("last_name"));
                 userObj.put("email",  email);
-
-                if(userObj.has("photo_url")) {
-                    userObj.getString("photo_url");
-                }
+                if(userObj.has("photo_url")) { userObj.getString("photo_url"); }
+                System.out.println(userObj.toString());
+                System.out.println("-------------");
                 userObj.put("message", "user already exist, welcome back!");
             }
 

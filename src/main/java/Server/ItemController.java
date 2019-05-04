@@ -27,13 +27,11 @@ public class ItemController {
         int itemID = payloadObj.getInt("item_id");
         String email = payloadObj.getString("email");
 
-
         //  Date and time in this case mean when the item was
         //  lost or found, not when the object was uploaded/created.
 
-
-        String date = payloadObj.getString("date");
-        String time = payloadObj.getString("time");
+        String date = payloadObj.getString("item_date");
+        String time = payloadObj.getString("item_time");
         String title = payloadObj.getString("item_name");
         String description = payloadObj.getString("item_desc");
         String type = payloadObj.getString("item_type");
@@ -56,9 +54,9 @@ public class ItemController {
             ps.setString(2, email);
             ps.setString(3, title);
             ps.setString(4, description);
-            ps.setString(5, type);
-            ps.setString(6, date);
-            ps.setString(7, time);
+            ps.setString(5, date);
+            ps.setString(6, time);
+            ps.setString(7, type); // type
             ps.setString(8, location);
             ps.setTimestamp(9, new Timestamp(System.currentTimeMillis()));
             ps.setInt(10, staticImageID);
