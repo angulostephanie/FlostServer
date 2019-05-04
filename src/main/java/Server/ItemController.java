@@ -26,16 +26,29 @@ public class ItemController {
 
         int itemID = payloadObj.getInt("item_id");
         String email = payloadObj.getString("email");
+
+
+        //  Date and time in this case mean when the item was
+        //  lost or found, not when the object was uploaded/created.
+
+
+        String date = payloadObj.getString("date");
+        String time = payloadObj.getString("time");
         String title = payloadObj.getString("item_name");
         String description = payloadObj.getString("item_desc");
-        String type = payloadObj.getString("item_type"); // lost or found
+        String type = payloadObj.getString("item_type");
         String location = payloadObj.getString("item_location");
-        InputStream imageStream = (InputStream) payloadObj.get("item_image");
+
+        // user only has a static image id if they don't upload their own image
+        // this id maps to a static image hosted on the android app
+        int staticImageID = -1;
+        if(payloadObj.has("static_image_id")) { staticImageID =  payloadObj.getInt("static_image_id"); }
 
 
         String insertTableSQL = "Insert INTO Items"  +
-                "(item_id, email, item_name, item_desc, item_type, item_image, item_location, item_timestamp)" +
-                "values (?,?,?,?,?,?,?,?)";
+                "(item_id, email, item_name, item_desc, item_date, item_time, item_type, item_location, " +
+                "item_timestamp, static_image_id)" +
+                "values (?,?,?,?,?,?,?,?,?,?)";
         PreparedStatement ps;
         try {
             ps = conn.prepareStatement(insertTableSQL);
@@ -44,9 +57,11 @@ public class ItemController {
             ps.setString(3, title);
             ps.setString(4, description);
             ps.setString(5, type);
-            ps.setBinaryStream(6, imageStream);
-            ps.setString(7, location);
-            ps.setTimestamp(8, new Timestamp(System.currentTimeMillis()));
+            ps.setString(6, date);
+            ps.setString(7, time);
+            ps.setString(8, location);
+            ps.setTimestamp(9, new Timestamp(System.currentTimeMillis()));
+            ps.setInt(10, staticImageID);
             ps.executeUpdate();
 
         } catch(SQLException e) {

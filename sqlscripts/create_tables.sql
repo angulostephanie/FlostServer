@@ -12,13 +12,17 @@ create table Items (
 	email varchar(40) not null,
 	item_name varchar(30) not null,
 	item_desc varchar(60) not null,
+	item_date varchar(30) not null,
+	item_time varchar(30) not null,
 	item_type enum('lost', 'found') not null,
 	item_location enum('fowler', 'johnson', 'academic commons', 'marketplace', 'green bean') not null,
-	image blob not null,
+	static_image_id int, -- if this is -1, then there should be an image on firebase mapped to the item_id
 	item_timestamp timestamp,
 	primary key (item_id, email),
 	foreign key (email) references Users(email)
 );
+
+
 
 create table Messages (
     message_id int not null,

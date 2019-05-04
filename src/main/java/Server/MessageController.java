@@ -32,6 +32,7 @@ public class MessageController {
         String senderEmail = payloadObj.getString("sender_email");
         String receiverEmail = payloadObj.getString("receiver_email");
         String messageContent = payloadObj.getString("message_content");
+        long messageTimestamp = payloadObj.getLong("message_timestamp");
         System.out.println("message says this :" + messageContent);
         String insertTableSQL = "Insert INTO Messages" +
                 "(message_id, sender_email, receiver_email, message_content, message_timestamp)" +
@@ -43,7 +44,7 @@ public class MessageController {
             ps.setString(2, senderEmail);
             ps.setString(3, receiverEmail);
             ps.setString(4, messageContent);
-            ps.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
+            ps.setTimestamp(5, new Timestamp(messageTimestamp));
             ps.executeUpdate();
 
         } catch (SQLException e) {
@@ -93,6 +94,7 @@ public class MessageController {
                 message.put("sender_email", results.getString("sender_email"));
                 message.put("receiver_email", results.getString("receiver_email"));
                 message.put("message_content", results.getString("message_content"));
+                message.put("message_timestamp", results.getTimestamp("message_timestamp"));
                 messages.put(message);
             }
             ps.close();

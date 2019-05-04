@@ -11,7 +11,7 @@ public class SQLConnection {
         String TIMEZONE_THING = "?useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=PST";
         String DB_URL = "jdbc:mysql://localhost/flost" +  TIMEZONE_THING;
         String USER = "root";
-        String PASSWORD = "password123";
+        String PASSWORD = "password";
         Connection conn;
         try {
             Class.forName(JDBC_DRIVER);

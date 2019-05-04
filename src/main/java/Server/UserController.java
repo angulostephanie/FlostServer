@@ -75,6 +75,7 @@ public class UserController {
             Connection conn = SQLConnection.createConnection();
             JSONObject existingUser = doesUserExist(conn, email);
 
+            
             if(existingUser != null) { return new ResponseEntity<>(existingUser.toString(), responseHeaders, HttpStatus.OK); }
 
             responseObj.put("first_name", firstName);
@@ -129,10 +130,17 @@ public class UserController {
             ResultSet results = ps.executeQuery();
             if(results.next()) {
                 userObj = new JSONObject();
+                System.out.println("-------------");
+                System.out.println("doesUserExist()");
+                System.out.println(results.toString());
+                System.out.println("-------------");
                 userObj.put("first_name", results.getString("first_name"));
                 userObj.put("last_name", results.getString("last_name"));
                 userObj.put("email",  email);
-                if(userObj.get("photo_url") != null) userObj.getString("photo_url");
+
+                if(userObj.has("photo_url")) {
+                    userObj.getString("photo_url");
+                }
                 userObj.put("message", "user already exist, welcome back!");
             }
 
