@@ -24,9 +24,7 @@ public class UserController {
     private static final JsonFactory jacksonFactory = new JacksonFactory();
     private static final String OXY_EMAIL = "oxy.edu";
     /*
-        Checks if user not in Users table,
-        if user is in table, login successfully,
-        if not, insert user into Users table.
+        Token created from GoogleSignIn passed from
      */
     @RequestMapping(value = "/authenticateUser", method = RequestMethod.POST)
     public ResponseEntity<String> authenticateUser(@RequestBody String payload, HttpServletRequest request) {
@@ -35,7 +33,6 @@ public class UserController {
 
         JSONObject payloadObj = new JSONObject(payload); // just the ID token
         String payloadToken = payloadObj.getString("token");
-
 
         JSONObject responseObj = new JSONObject();
 
@@ -75,7 +72,7 @@ public class UserController {
 
             System.out.println(firstName + "\n" + lastName + "\n" + email + "\n" + photoURL);
 
-            Connection conn = createConnection();
+            Connection conn = SQLConnection.createConnection();
             JSONObject existingUser = doesUserExist(conn, email);
 
             if(existingUser != null) { return new ResponseEntity<>(existingUser.toString(), responseHeaders, HttpStatus.OK); }
@@ -144,24 +141,5 @@ public class UserController {
         }
 
         return userObj;
-    }
-
-    private Connection createConnection() {
-        String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
-        String TIMEZONE_THING = "?useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=PST";
-        String DB_URL = "jdbc:mysql://localhost/flost" +  TIMEZONE_THING;
-        String USER = "root";
-        String PASSWORD = "password123"; // password123
-        Connection conn;
-        try {
-            Class.forName(JDBC_DRIVER);
-            conn = DriverManager.getConnection(DB_URL, USER, PASSWORD);
-            return conn;
-        } catch(SQLException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 }
