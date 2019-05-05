@@ -144,4 +144,78 @@ public class ChatController {
         }
         return new ResponseEntity(chatRooms.toString(), responseHeaders, HttpStatus.OK);
     }
+
+    /*
+       Gets users in a specific chat room.
+       i.e. if user sangulo@oxy.edu hits this endpoint, and asks for chat room #1, a sample response jsonarray would be
+       [
+           {
+            "email" : "sangulo@oxy.edu"
+           },
+           {
+            "email" : "trane@oxy.edu"
+           }
+       ]
+
+       The size of the JSONArray should always be 2 since we are limiting the chat room to 2 people rn.
+       This function ensures that only users a part of the chat can access this endpoint, using the token.
+
+       json params are –
+           "token" : str
+           "chat_room_id" : int
+    */
+    @RequestMapping(value = "/getUsersInChatRoom", method = RequestMethod.GET)
+    public ResponseEntity<String> getUsersInChatRoom(@RequestBody String payload, HttpServletRequest request) {
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.set("Content-Type", "application/json");
+
+        JSONArray userEmails = new JSONArray(); // emails associated to that chat room
+        JSONObject payloadObj = new JSONObject(payload);
+
+        String token = payloadObj.getString("token");
+        GoogleIdToken.Payload googlePayload = GoogleSignInAuthentication.getGooglePayload(token);
+        if(GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders) != null) {
+            System.out.println("error, google error response");
+            return GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders);
+        }
+
+        String googleEmail = googlePayload.getEmail();
+        int chatRoomID = payloadObj.getInt("chat_room_id");
+        Connection conn = SQLConnection.createConnection();
+
+        String query = "SELECT * FROM ChatRooms WHERE `chat_room_id` = ?";
+        PreparedStatement ps;
+        boolean containsGoogleEmail = false;
+        try {
+            ps = conn.prepareStatement(query);
+            ps.setInt(1, chatRoomID);
+            ResultSet results = ps.executeQuery();
+
+            while(results.next()) {
+                JSONObject userEmail = new JSONObject();
+                String email = results.getString("owner_email");
+                if(email.equals(googleEmail)) {
+                    System.out.println("Yes, email [" + email + "]" + " does exist in this chat room :)");
+                    containsGoogleEmail = true;
+                    userEmail.put("email", email);
+                    userEmails.put(userEmail);
+                } else {
+                    System.out.println("Looks like you're chatting with " + email);
+                    userEmail.put("email", email);
+                    userEmails.put(userEmail);
+                }
+            }
+            ps.close();
+        } catch(SQLException e) {
+            e.printStackTrace();
+            System.out.println("Error code [" + e.getErrorCode() + "]");
+            JSONObject errorObj = new JSONObject();
+            errorObj.put("message", "could not query messages from this chat");
+            return new ResponseEntity(errorObj.toString(), responseHeaders, HttpStatus.BAD_REQUEST);
+        }
+
+        if(!containsGoogleEmail) return GoogleSignInAuthentication.getUnmatchingEmailErrorResponse(responseHeaders);
+
+        return new ResponseEntity(userEmails.toString(), responseHeaders, HttpStatus.OK);
+    }
 }

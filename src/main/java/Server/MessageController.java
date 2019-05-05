@@ -94,8 +94,8 @@ public class MessageController {
 
         json params are –
             "token" : str
+            "chat_room_id" : int
             "sender_email" : str
-            "receiver_email" : str
      */
     @RequestMapping(value = "/getMessages", method = RequestMethod.GET)
     public ResponseEntity<String> getMessages(@RequestBody(required = false) String payload, HttpServletRequest request) {
@@ -113,25 +113,25 @@ public class MessageController {
         }
 
         String googleEmail = googlePayload.getEmail();
+
+        int chatRoomID = payloadObj.getInt("chat_room_id");
         String senderEmail = payloadObj.getString("sender_email");
 
         // someone is trying to hack lol, stahp
         if(!googleEmail.equals(senderEmail)) { return GoogleSignInAuthentication.getUnmatchingEmailErrorResponse(responseHeaders); }
 
-        String receiverEmail = payloadObj.getString("receiver_email");
-
-        String query = "SELECT * FROM Messages WHERE `sender_email` = ? AND `receiver_email` = ?";
+        String query = "SELECT * FROM Messages WHERE `chat_room_id` = ? and `sender_email` = ?";
         Connection conn = SQLConnection.createConnection();
         PreparedStatement ps;
         try {
             ps = conn.prepareStatement(query);
-            ps.setString(1, senderEmail);
-            ps.setString(2, receiverEmail);
-
+            ps.setInt(1, chatRoomID);
+            ps.setString(2, senderEmail);
             ResultSet results = ps.executeQuery();
 
             while(results.next()) {
                 JSONObject message = new JSONObject();
+                message.put("chat_room_id", results.getInt("chat_room_id"));
                 message.put("message_id", results.getInt("message_id"));
                 message.put("sender_email", results.getString("sender_email"));
                 message.put("receiver_email", results.getString("receiver_email"));
