@@ -1,5 +1,6 @@
 package Server;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import org.json.JSONArray;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.*;
@@ -131,4 +132,51 @@ public class ItemController {
         return new ResponseEntity(items.toString(), responseHeaders, HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/deleteItem", method = RequestMethod.DELETE)
+    public ResponseEntity<String> deleteItem(@RequestBody String payload, HttpServletRequest request) {
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.set("Content-Type", "application/json");
+
+        JSONObject payloadObj = new JSONObject(payload);
+        System.out.println(payload);
+        JSONObject responseObj = new JSONObject();
+        Connection conn = SQLConnection.createConnection();
+
+        String token = payloadObj.getString("token");
+        GoogleIdToken.Payload googlePayload = GoogleSignInAuthentication.getGooglePayload(token);
+        if(GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders) != null) {
+            System.out.println("error, google error response");
+            return GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders);
+        }
+        String googleEmail = googlePayload.getEmail();
+        String email = payloadObj.getString("email");
+
+        // someone is trying to hack lol, stahp
+        if(!googleEmail.equals(email)) { return GoogleSignInAuthentication.getUnmatchingEmailErrorResponse(responseHeaders); }
+
+        int itemID = payloadObj.getInt("item_id");
+        // DELETE FROM `movies` WHERE `movie_id`  IN (20,21);
+
+        String deleteItemSQL = "DELETE FROM Items WHERE `item_id` = ? AND `email` = ?";
+        PreparedStatement ps;
+        try {
+            ps = conn.prepareStatement(deleteItemSQL);
+            ps.setInt(1, itemID);
+            ps.setString(2, email);
+            System.out.println("executing update");
+            ps.executeUpdate();
+
+        } catch(SQLException e) {
+            e.printStackTrace();
+            responseObj.put("error", e.getErrorCode());
+            responseObj.put("message", "could not delete item to db :/ [" + e.getMessage() + "]");
+            return new ResponseEntity<>(responseObj.toString(), responseHeaders, HttpStatus.BAD_REQUEST);
+        } finally {
+            try { if(conn != null) conn.close(); }
+            catch(SQLException e) { e.printStackTrace(); }
+        }
+
+        responseObj.put("message", "item deleted from db successfully");
+        return new ResponseEntity<>(responseObj.toString(), responseHeaders, HttpStatus.OK);
+    }
 }

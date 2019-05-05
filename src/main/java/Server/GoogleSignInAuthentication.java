@@ -62,4 +62,9 @@ class GoogleSignInAuthentication {
         }
         return null;
     }
+    static ResponseEntity<String> getUnmatchingEmailErrorResponse(HttpHeaders responseHeaders) {
+        JSONObject errorObj = new JSONObject();
+        errorObj.put("message", "emails do not match, >:(");
+        return new ResponseEntity<>(errorObj.toString(), responseHeaders, HttpStatus.BAD_REQUEST);
+    }
 }
