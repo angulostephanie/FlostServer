@@ -1,5 +1,6 @@
 package Server;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.http.HttpHeaders;
@@ -19,36 +20,48 @@ public class MessageController {
         Posts message object in the Messages table
      */
     @RequestMapping(value = "/postMessage", method = RequestMethod.POST)
-    public ResponseEntity<String> postItem(@RequestBody String payload, HttpServletRequest request) {
+    public ResponseEntity<String> postMessage(@RequestBody String payload, HttpServletRequest request) {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.set("Content-Type", "application/json");
 
         JSONObject payloadObj = new JSONObject(payload);
         System.out.println(payload);
+
+        String token = payloadObj.getString("token");
+        GoogleIdToken.Payload googlePayload = GoogleSignInAuthentication.getGooglePayload(token);
+        if(GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders) != null) {
+            System.out.println("error, google error response");
+            return GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders);
+        }
+
+        String googleEmail = googlePayload.getEmail();
+        String email = payloadObj.getString("sender_email");
+
+        // someone is trying to hack lol, stahp
+        if(!googleEmail.equals(email)) { return GoogleSignInAuthentication.getUnmatchingEmailErrorResponse(responseHeaders); }
+
         JSONObject responseObj = new JSONObject();
         Connection conn = SQLConnection.createConnection();
 
+        int chatRoomID = payloadObj.getInt("chat_room_id");
         int messageID = payloadObj.getInt("message_id");
         String senderEmail = payloadObj.getString("sender_email");
-        String senderName = payloadObj.getString("sender_name");
         String receiverEmail = payloadObj.getString("receiver_email");
-        String receiverName = payloadObj.getString("receiver_name");
         String messageContent = payloadObj.getString("message_content");
         long messageTimestamp = payloadObj.getLong("message_timestamp");
         System.out.println("message says this :" + messageContent);
         String insertTableSQL = "Insert INTO Messages" +
-                "(message_id, sender_email, sender_name, receiver_email, receiver_name, message_content, message_timestamp)" +
-                "values (?,?,?,?,?)";
+                "(chat_room_id, message_id, sender_email, receiver_email, message_content, message_timestamp)" +
+                "values (?,?,?,?,?,?)";
         PreparedStatement ps;
         try {
             ps = conn.prepareStatement(insertTableSQL);
-            ps.setInt(1, messageID);
-            ps.setString(2, senderEmail);
-            ps.setString(3, senderName);
+            ps.setInt(1, chatRoomID);
+            ps.setInt(2, messageID);
+            ps.setString(3, senderEmail);
             ps.setString(4, receiverEmail);
-            ps.setString(5, receiverName);
-            ps.setString(6, messageContent);
-            ps.setTimestamp(7, new Timestamp(messageTimestamp));
+            ps.setString(5, messageContent);
+            ps.setTimestamp(6, new Timestamp(messageTimestamp));
             ps.executeUpdate();
 
         } catch (SQLException e) {
@@ -115,4 +128,4 @@ public class MessageController {
         }
         return new ResponseEntity(messages.toString(), responseHeaders, HttpStatus.OK);
     }
-    }
+}

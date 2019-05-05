@@ -23,10 +23,21 @@ public class ItemController {
         JSONObject payloadObj = new JSONObject(payload);
         System.out.println(payload);
         JSONObject responseObj = new JSONObject();
-        Connection conn = SQLConnection.createConnection();
+
+
+        String token = payloadObj.getString("token");
+        GoogleIdToken.Payload googlePayload = GoogleSignInAuthentication.getGooglePayload(token);
+        if(GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders) != null) {
+            System.out.println("error, google error response");
+            return GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders);
+        }
+        String googleEmail = googlePayload.getEmail();
+        String email = payloadObj.getString("email");
+
+        // someone is trying to hack lol, stahp
+        if(!googleEmail.equals(email)) { return GoogleSignInAuthentication.getUnmatchingEmailErrorResponse(responseHeaders); }
 
         int itemID = payloadObj.getInt("item_id");
-        String email = payloadObj.getString("email");
 
         //  Date and time in this case mean when the item was
         //  lost or found, not when the object was uploaded/created.
@@ -38,6 +49,7 @@ public class ItemController {
         String type = payloadObj.getString("item_type");
         String location = payloadObj.getString("item_location");
 
+        Connection conn = SQLConnection.createConnection();
         // user only has a static image id if they don't upload their own image
         // this id maps to a static image hosted on the android app
         int staticImageID = -1;
@@ -88,10 +100,19 @@ public class ItemController {
     public ResponseEntity<String> getItems(@RequestBody(required = false) String payload, HttpServletRequest request) {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.set("Content-Type", "application/json");
+
         boolean all = false;
 
         JSONArray items = new JSONArray();
         JSONObject payloadObj = new JSONObject(payload);
+
+        String token = payloadObj.getString("token");
+        GoogleIdToken.Payload googlePayload = GoogleSignInAuthentication.getGooglePayload(token);
+        if(GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders) != null) {
+            System.out.println("error, google error response");
+            return GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders);
+        }
+
         if(payloadObj.isNull("item_type")) all = true;
         String query = all ? "SELECT * From Items ORDER BY `item_timestamp` DESC" :
                 "SELECT * FROM Items WHERE item_type = ? ORDER BY `item_timestamp` DESC";
@@ -113,6 +134,8 @@ public class ItemController {
                 item.put("email", results.getString("email"));
                 item.put("item_name", results.getString("item_name"));
                 item.put("item_desc", results.getString("item_desc"));
+                item.put("item_date", results.getString("item_date"));
+                item.put("item_time", results.getString("item_time"));
                 item.put("item_type", results.getString("item_type"));
                 item.put("item_location", results.getString("item_location"));
                 item.put("item_image", results.getBlob("item_image"));
@@ -155,7 +178,6 @@ public class ItemController {
         if(!googleEmail.equals(email)) { return GoogleSignInAuthentication.getUnmatchingEmailErrorResponse(responseHeaders); }
 
         int itemID = payloadObj.getInt("item_id");
-        // DELETE FROM `movies` WHERE `movie_id`  IN (20,21);
 
         String deleteItemSQL = "DELETE FROM Items WHERE `item_id` = ? AND `email` = ?";
         PreparedStatement ps;
