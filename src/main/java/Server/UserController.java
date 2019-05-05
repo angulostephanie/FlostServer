@@ -20,9 +20,9 @@ import org.json.JSONObject;
 @RestController
 public class UserController {
 
-    private static final String OXY_EMAIL = "oxy.edu";
     /*
-        Token created from GoogleSignIn passed from
+       Takes in Google sign in token, verifies it, gets email and other user data
+       Stores user data into db, if not already there.
      */
     @RequestMapping(value = "/authenticateUser", method = RequestMethod.POST)
     public ResponseEntity<String> authenticateUser(@RequestBody String payload, HttpServletRequest request) {
