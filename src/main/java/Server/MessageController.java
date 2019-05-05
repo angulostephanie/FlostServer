@@ -92,7 +92,19 @@ public class MessageController {
         JSONArray messages = new JSONArray();
         JSONObject payloadObj = new JSONObject(payload);
 
+        String token = payloadObj.getString("token");
+        GoogleIdToken.Payload googlePayload = GoogleSignInAuthentication.getGooglePayload(token);
+        if(GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders) != null) {
+            System.out.println("error, google error response");
+            return GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders);
+        }
+
+        String googleEmail = googlePayload.getEmail();
         String senderEmail = payloadObj.getString("sender_email");
+
+        // someone is trying to hack lol, stahp
+        if(!googleEmail.equals(senderEmail)) { return GoogleSignInAuthentication.getUnmatchingEmailErrorResponse(responseHeaders); }
+
         String receiverEmail = payloadObj.getString("receiver_email");
 
         String query = "SELECT * FROM Messages WHERE `sender_email` = ? AND `receiver_email` = ?";
@@ -109,9 +121,7 @@ public class MessageController {
                 JSONObject message = new JSONObject();
                 message.put("message_id", results.getInt("message_id"));
                 message.put("sender_email", results.getString("sender_email"));
-                message.put("sender_name", results.getString("sender_name"));
                 message.put("receiver_email", results.getString("receiver_email"));
-                message.put("receiver_name", results.getString("receiver_name"));
                 message.put("message_content", results.getString("message_content"));
                 message.put("message_timestamp", results.getTimestamp("message_timestamp"));
                 messages.put(message);

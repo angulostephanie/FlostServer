@@ -138,7 +138,7 @@ public class ItemController {
                 item.put("item_time", results.getString("item_time"));
                 item.put("item_type", results.getString("item_type"));
                 item.put("item_location", results.getString("item_location"));
-                item.put("item_image", results.getBlob("item_image"));
+                item.put("static_image_id", results.getInt("static_image_id"));
                 item.put("item_timestamp", results.getTimestamp("item_timestamp"));
                 items.put(item);
             }
