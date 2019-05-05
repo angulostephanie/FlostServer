@@ -23,6 +23,12 @@ public class ChatController {
         chat_room_id,   owner_email
         1               sangulo@oxy.edu
         1               trane@oxy.edu
+
+        json params are –
+            "token" : str
+            "chat_room_id" : int
+            "current_email" : str
+            "other_email" : str
      */
     @RequestMapping(value = "/createChatRoom", method = RequestMethod.POST)
     public ResponseEntity<String> createChatRoom(@RequestBody String payload, HttpServletRequest request) {
@@ -87,6 +93,11 @@ public class ChatController {
         Gets all the chat rooms a user is a part of.
         i.e. if sangulo@oxy.edu is chatting with both trane@oxy.edu (chat room id = 1) and dih@oxy.edu (chat room id = 2)
             this function will return a JSONArray [{"chat_room_id" : 1}, {"chat_room_id" : 2}]
+
+        json params are –
+            "token" : str
+            "chat_room_id" : int
+            "current_email" : str
      */
     @RequestMapping(value = "/getChatRooms", method = RequestMethod.GET)
     public ResponseEntity<String> getChatRooms(@RequestBody String payload, HttpServletRequest request) {

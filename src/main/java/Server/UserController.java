@@ -15,6 +15,9 @@ public class UserController {
     /*
        Takes in Google sign in token, verifies it, gets email and other user data
        Stores user data into db, if not already there.
+
+       json params are –
+            "token" : str
      */
     @RequestMapping(value = "/authenticateUser", method = RequestMethod.POST)
     public ResponseEntity<String> authenticateUser(@RequestBody String payload, HttpServletRequest request) {

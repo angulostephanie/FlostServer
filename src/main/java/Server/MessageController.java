@@ -18,6 +18,14 @@ import java.sql.*;
 public class MessageController {
     /*
         Posts message object in the Messages table
+        json params are –
+            "token" : str
+            "chat_room_id" : int
+            "message_id" : int
+            "sender_email" : str
+            "receiver_email" : str
+            "message_content" : str
+            "message_timestamp" : long
      */
     @RequestMapping(value = "/postMessage", method = RequestMethod.POST)
     public ResponseEntity<String> postMessage(@RequestBody String payload, HttpServletRequest request) {
@@ -83,6 +91,11 @@ public class MessageController {
         Ideally, we want to get messages specific to a chat room.
         We can uniquely if messages belong to a chat room given the sender/receiver email.
         So – parameters will be those 2 emails.
+
+        json params are –
+            "token" : str
+            "sender_email" : str
+            "receiver_email" : str
      */
     @RequestMapping(value = "/getMessages", method = RequestMethod.GET)
     public ResponseEntity<String> getMessages(@RequestBody(required = false) String payload, HttpServletRequest request) {

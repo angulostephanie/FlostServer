@@ -14,6 +14,17 @@ import org.json.JSONObject;
 public class ItemController {
     /*
         Posts item into Items table
+        json params are –
+            "token" : str
+            "item_id" : int
+            "email" : str
+            "item_name" : str
+            "item_desc" : str
+            "item_date" : str
+            "item_time" : str
+            "item_type" : str // must be 'lost' or 'found'
+            "item_location" : str // must be 'fowler', 'johnson', 'academic commons', 'marketplace', 'green bean'
+            "static_image_id" : int - optional! if user decides to use a static image
      */
     @RequestMapping(value = "/postItem", method = RequestMethod.POST)
     public ResponseEntity<String> postItem(@RequestBody String payload, HttpServletRequest request) {
@@ -95,6 +106,10 @@ public class ItemController {
        Gets items based on whether its type 'lost' or 'found'
        If no parameter is passed, return all.
        This is needed for the list/map views.
+
+       json params are –
+            "token" : str
+            "item_type" : str -- optional ('lost' or 'found'), if this isn't passed, all items are returned
      */
     @RequestMapping(value = "/getItems", method = RequestMethod.GET)
     public ResponseEntity<String> getItems(@RequestBody(required = false) String payload, HttpServletRequest request) {
@@ -155,6 +170,13 @@ public class ItemController {
         return new ResponseEntity(items.toString(), responseHeaders, HttpStatus.OK);
     }
 
+    /*
+        Allows users to delete their items
+        json params are –
+            "token" : str
+            "email" : str
+            "item_id" : int
+     */
     @RequestMapping(value = "/deleteItem", method = RequestMethod.DELETE)
     public ResponseEntity<String> deleteItem(@RequestBody String payload, HttpServletRequest request) {
         HttpHeaders responseHeaders = new HttpHeaders();
