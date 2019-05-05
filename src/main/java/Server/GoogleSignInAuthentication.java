@@ -65,6 +65,7 @@ class GoogleSignInAuthentication {
     static ResponseEntity<String> getUnmatchingEmailErrorResponse(HttpHeaders responseHeaders) {
         JSONObject errorObj = new JSONObject();
         errorObj.put("message", "emails do not match, >:(");
+        System.out.println("you're probably trying to hack, pls stop");
         return new ResponseEntity<>(errorObj.toString(), responseHeaders, HttpStatus.BAD_REQUEST);
     }
 }
