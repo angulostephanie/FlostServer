@@ -19,9 +19,7 @@ import org.json.JSONObject;
 
 @RestController
 public class UserController {
-    private static final String CLIENT_ID = "302127086091-es2d4803pni58crrri2i22pnfru2oqo6.apps.googleusercontent.com";
-    private static final HttpTransport httpTransport = new NetHttpTransport();
-    private static final JsonFactory jacksonFactory = new JacksonFactory();
+
     private static final String OXY_EMAIL = "oxy.edu";
     /*
         Token created from GoogleSignIn passed from
@@ -36,29 +34,12 @@ public class UserController {
 
         JSONObject responseObj = new JSONObject();
 
-        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(httpTransport, jacksonFactory)
-                .setAudience(Collections.singletonList(CLIENT_ID))
-                .setIssuers(Arrays.asList("https://accounts.google.com", "accounts.google.com"))
-                .build();
-
         try {
-            GoogleIdToken token = verifier.verify(payloadToken);
 
-            if(token == null) {
-                System.out.println("TOKEN WAS NOT SUCCESSFULLY VERIFIED");
-                responseObj.put("error", 1);
-                responseObj.put("message", "google token was not verified, try again");
-                return new ResponseEntity<>(responseObj.toString(), responseHeaders, HttpStatus.BAD_REQUEST);
-            }
+            GoogleIdToken.Payload googlePayload = GoogleSignInAuthentication.getGooglePayload(payloadToken);
 
-            GoogleIdToken.Payload googlePayload = token.getPayload();
-            if(!googlePayload.getHostedDomain().equals(OXY_EMAIL)) {
-                System.out.println(googlePayload.getHostedDomain());
-                System.out.println(OXY_EMAIL);
-                System.out.println("MUST USE A OXY DOMAIN EMAIL");
-                responseObj.put("error", 2);
-                responseObj.put("message", "user must login with oxy email");
-                return new ResponseEntity<>(responseObj.toString(), responseHeaders, HttpStatus.BAD_REQUEST);
+            if(GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders) != null) {
+                return GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders);
             }
 
             System.out.println("----------------------------------------------------");
@@ -75,7 +56,6 @@ public class UserController {
             Connection conn = SQLConnection.createConnection();
             JSONObject existingUser = doesUserExist(conn, email);
 
-            
             if(existingUser != null) { return new ResponseEntity<>(existingUser.toString(), responseHeaders, HttpStatus.OK); }
 
             responseObj.put("first_name", firstName);
@@ -110,8 +90,6 @@ public class UserController {
                 }
             }
 
-        } catch(GeneralSecurityException e) {
-            e.printStackTrace();
         } catch(IOException e) {
             e.printStackTrace();
         }

@@ -30,21 +30,25 @@ public class MessageController {
 
         int messageID = payloadObj.getInt("message_id");
         String senderEmail = payloadObj.getString("sender_email");
+        String senderName = payloadObj.getString("sender_name");
         String receiverEmail = payloadObj.getString("receiver_email");
+        String receiverName = payloadObj.getString("receiver_name");
         String messageContent = payloadObj.getString("message_content");
         long messageTimestamp = payloadObj.getLong("message_timestamp");
         System.out.println("message says this :" + messageContent);
         String insertTableSQL = "Insert INTO Messages" +
-                "(message_id, sender_email, receiver_email, message_content, message_timestamp)" +
+                "(message_id, sender_email, sender_name, receiver_email, receiver_name, message_content, message_timestamp)" +
                 "values (?,?,?,?,?)";
         PreparedStatement ps;
         try {
             ps = conn.prepareStatement(insertTableSQL);
             ps.setInt(1, messageID);
             ps.setString(2, senderEmail);
-            ps.setString(3, receiverEmail);
-            ps.setString(4, messageContent);
-            ps.setTimestamp(5, new Timestamp(messageTimestamp));
+            ps.setString(3, senderName);
+            ps.setString(4, receiverEmail);
+            ps.setString(5, receiverName);
+            ps.setString(6, messageContent);
+            ps.setTimestamp(7, new Timestamp(messageTimestamp));
             ps.executeUpdate();
 
         } catch (SQLException e) {
@@ -92,7 +96,9 @@ public class MessageController {
                 JSONObject message = new JSONObject();
                 message.put("message_id", results.getInt("message_id"));
                 message.put("sender_email", results.getString("sender_email"));
+                message.put("sender_name", results.getString("sender_name"));
                 message.put("receiver_email", results.getString("receiver_email"));
+                message.put("receiver_name", results.getString("receiver_name"));
                 message.put("message_content", results.getString("message_content"));
                 message.put("message_timestamp", results.getTimestamp("message_timestamp"));
                 messages.put(message);

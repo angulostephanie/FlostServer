@@ -27,7 +27,9 @@ create table Items (
 create table Messages (
     message_id int not null,
     sender_email varchar(30) not null,
+    sender_name varchar(30) not null,
     receiver_email varchar(30) not null,
+    receiver_name varchar(30) not null,
     message_content text not null,
     message_timestamp timestamp,
     primary key(message_id),
