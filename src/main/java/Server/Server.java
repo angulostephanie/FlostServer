@@ -25,7 +25,7 @@ class ChatServer extends Thread {
     Configuration config;
     ChatServer() {
         config = new Configuration();
-        config.setHostname("0.0.0.0");
+        config.setHostname("localhost");
         config.setPort(9092);
         System.out.println(" ---- chat server obj created --- ");
     }
@@ -39,6 +39,27 @@ class ChatServer extends Thread {
             }
         });
         server.addEventListener("chatevent", ChatObject.class, new DataListener<ChatObject>() {
+
+            private void addRoomEvents() {
+
+                server.addEventListener("join", String.class, new DataListener<String>() {
+                    @Override
+                    public void onData(SocketIOClient socketIOClient, String roomName, AckRequest ackRequest) throws Exception {
+                      //  log.info("<join room name> " + roomName);
+                        socketIOClient.joinRoom(roomName);
+                        System.out.println(socketIOClient + " joined room " + roomName);
+                    }
+                });
+
+                server.addEventListener("leave", String.class, new DataListener<String>() {
+                    @Override
+                    public void onData(SocketIOClient socketIOClient, String roomName, AckRequest ackRequest) throws Exception {
+                    //    log.info("<leave room name>" + roomName);
+                        socketIOClient.leaveRoom(roomName);
+                    }
+                });
+            }
+
             @Override
             public void onData(SocketIOClient client, ChatObject data, AckRequest ackRequest) {
                 // broadcast messages to all clients
