@@ -54,8 +54,8 @@ public class ChatController {
         JSONObject responseObj = new JSONObject();
 
         String insertTableSQL = "Insert INTO ChatRooms"  +
-                "(chat_room_id, owner_email)" +
-                "values (?,?)";
+                "(chat_room_id, owner_email, chatroom_timestamp)" +
+                "values (?,?, ?)";
         PreparedStatement ps1;
         PreparedStatement ps2;
         try {
@@ -64,17 +64,19 @@ public class ChatController {
 
             ps1.setInt(1, chatRoomID);
             ps1.setString(2, owner_email);
+            ps1.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
             ps1.executeUpdate();
 
             ps2.setInt(1, chatRoomID);
             ps2.setString(2, otherEmail);
+            ps2.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
             ps2.executeUpdate();
 
             ps1.close();
             ps2.close();
 
         } catch(SQLException e) {
-            if(e.getErrorCode() != 1062) {
+            if(!e.getMessage().contains("Duplicate entry")) {
                 e.printStackTrace();
                 responseObj.put("error", e.getErrorCode());
                 responseObj.put("message", "could not create a chat room :/ [" + e.getMessage() + "]");

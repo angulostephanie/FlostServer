@@ -25,7 +25,7 @@ class ChatServer extends Thread {
     Configuration config;
     ChatServer() {
         config = new Configuration();
-        config.setHostname("localhost");
+        config.setHostname("0.0.0.0");
         config.setPort(9092);
         System.out.println(" ---- chat server obj created --- ");
     }

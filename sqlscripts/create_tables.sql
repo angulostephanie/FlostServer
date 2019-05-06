@@ -40,7 +40,8 @@ create table Messages (
 create table ChatRooms (
     chat_room_id int not null,
     owner_email varchar(30) not null,
-    primary key(chat_room_id, owner_email),
+    chatroom_timestamp timestamp,
+    primary key(chat_room_id, owner_email, chatroom_timestamp),
     foreign key(owner_email) references Users(email)
   );
 

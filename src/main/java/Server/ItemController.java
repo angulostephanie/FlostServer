@@ -171,6 +171,73 @@ public class ItemController {
     }
 
     /*
+       Gets user's items – necessary for the profile page.
+        Could have merged this with /getItems but oh well lol.
+
+       json params are –
+            "token" : str
+            "email" : str
+     */
+    @RequestMapping(value = "/getUsersItems", method = RequestMethod.GET)
+    public ResponseEntity<String> getUsersItems(@RequestBody(required = false) String payload, HttpServletRequest request) {
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.set("Content-Type", "application/json");
+
+        JSONArray items = new JSONArray();
+        JSONObject payloadObj = new JSONObject(payload);
+
+        String token = payloadObj.getString("token");
+
+        GoogleIdToken.Payload googlePayload = GoogleSignInAuthentication.getGooglePayload(token);
+        if(GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders) != null) {
+            System.out.println("error, google error response");
+            return GoogleSignInAuthentication.getErrorResponse(googlePayload, responseHeaders);
+        }
+
+        String googleEmail = googlePayload.getEmail();
+        String email = payloadObj.getString("email");
+
+        // someone is trying to hack lol, stahp
+        if(!googleEmail.equals(email)) { return GoogleSignInAuthentication.getUnmatchingEmailErrorResponse(responseHeaders); }
+
+        String query = "SELECT * FROM Items WHERE email = ? ORDER BY `item_timestamp` DESC";
+
+        Connection conn = SQLConnection.createConnection();
+        PreparedStatement ps;
+        try {
+            ps = conn.prepareStatement(query);
+            ps.setString(1, email);
+
+            ResultSet results = ps.executeQuery();
+
+            while(results.next()) {
+                JSONObject item = new JSONObject();
+                item.put("item_id", results.getInt("item_id"));
+                item.put("email", results.getString("email"));
+                item.put("item_name", results.getString("item_name"));
+                item.put("item_desc", results.getString("item_desc"));
+                item.put("item_date", results.getString("item_date"));
+                item.put("item_time", results.getString("item_time"));
+                item.put("item_type", results.getString("item_type"));
+                item.put("item_location", results.getString("item_location"));
+                item.put("static_image_id", results.getInt("static_image_id"));
+                item.put("item_timestamp", results.getTimestamp("item_timestamp"));
+                items.put(item);
+            }
+            ps.close();
+        } catch(SQLException e) {
+            e.printStackTrace();
+            System.out.println("Error code [" + e.getErrorCode() + "]");
+            JSONObject errorObj = new JSONObject();
+            errorObj.put("message", "could not query items");
+
+            return new ResponseEntity(errorObj.toString(), responseHeaders, HttpStatus.BAD_REQUEST);
+
+        }
+        return new ResponseEntity(items.toString(), responseHeaders, HttpStatus.OK);
+    }
+
+    /*
         Allows users to delete their items
         json params are –
             "token" : str

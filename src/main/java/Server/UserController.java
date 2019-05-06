@@ -17,7 +17,7 @@ public class UserController {
        Stores user data into db, if not already there.
 
        json params are –
-            "token" : str
+            j
      */
     @RequestMapping(value = "/authenticateUser", method = RequestMethod.POST)
     public ResponseEntity<String> authenticateUser(@RequestBody String payload, HttpServletRequest request) {
