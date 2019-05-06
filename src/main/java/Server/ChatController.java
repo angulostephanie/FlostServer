@@ -28,7 +28,6 @@ public class ChatController {
             "token" : str
             "chat_room_id" : int
             "current_email" : str
-            "other_email" : str
      */
     @RequestMapping(value = "/createChatRoom", method = RequestMethod.POST)
     public ResponseEntity<String> createChatRoom(@RequestBody String payload, HttpServletRequest request) {
@@ -75,10 +74,12 @@ public class ChatController {
             ps2.close();
 
         } catch(SQLException e) {
-            e.printStackTrace();
-            responseObj.put("error", e.getErrorCode());
-            responseObj.put("message", "could not create a chat room :/ [" + e.getMessage() + "]");
-            return new ResponseEntity<>(responseObj.toString(), responseHeaders, HttpStatus.BAD_REQUEST);
+            if(e.getErrorCode() != 1062) {
+                e.printStackTrace();
+                responseObj.put("error", e.getErrorCode());
+                responseObj.put("message", "could not create a chat room :/ [" + e.getMessage() + "]");
+                return new ResponseEntity<>(responseObj.toString(), responseHeaders, HttpStatus.BAD_REQUEST);
+            }
         } finally {
             try { if(conn != null) conn.close(); }
             catch(SQLException e) { e.printStackTrace(); }
